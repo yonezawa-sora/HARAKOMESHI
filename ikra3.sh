@@ -740,6 +740,8 @@ fi
 
 
 # instance salmon index
+SALMON_INDEX=salmon_index_
+
 if [[ ! -d "$SALMON_INDEX" ]]; then
   $SALMON index --threads $THREADS --transcripts $REF_TRANSCRIPT --index $SALMON_INDEX -k 31 --gencode
 fi
