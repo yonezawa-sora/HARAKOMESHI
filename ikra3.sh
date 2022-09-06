@@ -5,7 +5,7 @@ set -o pipefail
 # オプション関連ここから
 # 大部分は http://dojineko.hateblo.jp/entry/2016/06/30/225113 から引用させていただきました。
 
-# 変数 EX_MATRIX_FILE, REF_SPECIES はここで定義
+# 変数 EX_MATRIX_FILEはここで定義
 # if [[ $IF_TEST = true ]]; then でテストモード用の実行が可能
 
 # 今まで$1 = EX_MATRIX_FILEだったのを変更している
@@ -223,10 +223,8 @@ done
 
 # オプション無しの値を使う場合はここで処理する
 EX_MATRIX_FILE="${PARAM}"; PARAM=("${PARAM[@]:1}")
-REF_SPECIES="${PARAM}"; PARAM=("${PARAM[@]:1}")
 
 [[ -z "${EX_MATRIX_FILE}" ]] && usage
-[[ -z "${REF_SPECIES}" ]] && usage
 
 # 規定外のオプションがある場合にはusageを表示
 if [[ -n "${PARAM[@]}" ]]; then
@@ -246,7 +244,6 @@ uname -n >> ${LOG_FILE}
 # 結果を表示(オプションテスト用)
 cat << EOS | column -t | tee -a ${LOG_FILE}
 EX_MATRIX_FILE ${EX_MATRIX_FILE}
-REF_SPECIES ${REF_SPECIES}
 RUNINDOCKER ${RUNINDOCKER}
 DOCKER ${DOCKER}
 THREADS ${THREADS}
@@ -268,49 +265,10 @@ set -u
 # 実験テーブル.csv
 
 # 十分大きなものにする。
-MAXSIZE=25G
+MAXSIZE=20G
 SRA_ROOT=$HOME/ncbi/public/sra
 
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
-
-if [[ $REF_SPECIES = mouse ]]; then
-  BASE_REF_TRANSCRIPT=ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M${M_GEN_VER}
-  REF_TRANSCRIPT=gencode.vM${M_GEN_VER}.transcripts.fa.gz
-  if [ $IF_PC = false ]; then
-    REF_TRANSCRIPT=gencode.vM${M_GEN_VER}.transcripts.fa.gz
-  else
-    REF_TRANSCRIPT=gencode.vM${M_GEN_VER}.pc_transcripts.fa.gz
-  fi
-  SALMON_INDEX=salmon_index_mouse
-#   REF_GTF=gencode.vM${M_GEN_VER}.annotation.gtf.gz
-  TX2SYMBOL=gencode.vM${M_GEN_VER}.metadata.MGI.gz
-
-elif [[ $REF_SPECIES = human ]]; then
-  BASE_REF_TRANSCRIPT=ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_${H_GEN_VER}
-  # REF_TRANSCRIPT=gencode.v${H_GEN_VER}.pc_transcripts.fa.gz
-
-  if [ $IF_PC = false ]; then
-    REF_TRANSCRIPT=gencode.v${H_GEN_VER}.transcripts.fa.gz
-  else
-    REF_TRANSCRIPT=gencode.v${H_GEN_VER}.pc_transcripts.fa.gz
-  fi
-
-  SALMON_INDEX=salmon_index_human
-#   REF_GTF=gencode.v${H_GEN_VER}.annotation.gtf.gz
-  TX2SYMBOL=gencode.v${H_GEN_VER}.metadata.HGNC.gz
-
-# other species
-# リファレンスのデータを生物名にしてもらい、basenameで抜き出し変数に格納する?
-elif [[ $REF_SPECIES = other ]] ; then
-
-  FILE="*.fa.gz"
-  if [ -e $FILE]; then 
-  REF_TRANSCRIPT_OTHER="../../*.fa.gz" 
-  fi
-else
-  echo No reference speice!
-  exit
-fi
 
 COWSAY=cowsay
 # PREFETCH=prefetch
@@ -629,19 +587,6 @@ fi
 
 if [[ $MAPPING_TOOL = HISAT2 ]]; then
 
-  # download reference genome index
-  if [[ $REF_SPECIES = mouse ]]; then
-    BASE_REF_GENOME=https://genome-idx.s3.amazonaws.com/hisat
-    REF_GENOME=mm10_genome.tar.gz
-    SPECIES_NAME=mm10
-  elif [[ $REF_SPECIES = human ]]; then
-    BASE_REF_GENOME=https://genome-idx.s3.amazonaws.com/hisat
-    REF_GENOME=hg38_genome.tar.gz
-    SPECIES_NAME=hg38
-  else
-    echo No reference genome!
-    exit
-  fi
 
   if [[ ! -f "$REF_GENOME" ]]; then
     $WGET $BASE_REF_GENOME/$REF_GENOME
@@ -716,18 +661,6 @@ if [[ $MAPPING_TOOL = HISAT2 ]]; then
 fi
 
 if [[ $MAPPING_TOOL = STAR ]]; then
-
-  # download reference genome
-  if [[ $REF_SPECIES = mouse ]]; then
-    BASE_REF_GENOME=http://ftp.ensembl.org/pub/release-102/fasta/mus_musculus/dna
-    REF_GENOME=Mus_musculus.GRCm38.dna.primary_assembly.fa
-  elif [[ $REF_SPECIES = human ]]; then
-    BASE_REF_GENOME=ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37
-    REF_GENOME=GRCh38.primary_assembly.genome.fa
-  else
-    echo No reference genome!
-    exit
-  fi
 
   if [[ ! -f "$REF_GENOME" ]]; then
     $WGET $BASE_REF_GENOME/${REF_GENOME}.gz
