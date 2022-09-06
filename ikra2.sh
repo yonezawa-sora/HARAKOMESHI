@@ -14,8 +14,6 @@ set -o pipefail
 
 PROGNAME="$( basename "$0" )"
 
-VERSION="v2.0.1"
-
 cat << "EOF" 
     __                       
  __/\ \                      
@@ -23,10 +21,11 @@ cat << "EOF"
 \/\ \ \ , <  /\`'__\/'__`\   
  \ \ \ \ \\`\\ \ \//\ \L\.\_  
   \ \_\ \_\ \_\ \_\\ \__/.\_\     
-   \/_/\/_/\/_/\/_/ \/__/\/_/
+   \/_/\/_/\/_/\/_/ \/__/\/_/ ２
                              
 EOF
 
+# []の外は必須のものとして認識される []はオプションを意味する
 # Usage
 function usage() {
   cat << EOS >&2        
@@ -61,16 +60,8 @@ EOS
   exit 1
 }
 
-
-# version
-function version() {
-  cat << EOS >&2
-ikra ${VERSION} -RNAseq pipeline centered on Salmon-
-EOS
-  exit 1
-}
-
 # デフォルト値を先に定義しておく
+# REF_TRANSCRIPTなどのデフォルト値は今回必要ない
 RUNINDOCKER=1
 DOCKER=docker
 THREADS=1
@@ -232,7 +223,7 @@ fi
 
 
 cat << EOS | tee -a ${LOG_FILE}
-ikra ${VERSION} -RNAseq pipeline centered on Salmon-
+-RNAseq pipeline centered on Salmon-
 EOS
 
 date >> ${LOG_FILE}
@@ -252,8 +243,6 @@ IF_PC ${IF_PC:-false}
 IF_REMOVE_INTERMEDIATES ${IF_REMOVE_INTERMEDIATES:-false}
 OUTPUT_FILE ${OUTPUT_FILE}
 MAPPING_TOOL ${MAPPING_TOOL}
-M_GEN_VER ${M_GEN_VER}
-H_GEN_VER ${H_GEN_VER}
 LOG_FILE ${LOG_FILE}
 EOS
 
@@ -570,30 +559,13 @@ do
   fi
 done
 
-# download $REF_TRANSCRIPT
-if [[ ! -f "$REF_TRANSCRIPT" ]]; then
-  $WGET $BASE_REF_TRANSCRIPT/$REF_TRANSCRIPT
-fi
-
-# # download $REF_GTF
-# if [[ ! -f "$REF_GTF" ]]; then
-#   wget $BASE_REF_TRANSCRIPT/$REF_GTF
-# fi
+# download $REF_TRANSCRIPTは今回必要ないので除く
 
 ################################
 # --alignモードの時にalignmentを行いbamファイルを生成する
 # 2021年4月追加（山崎）
 
 if [[ $MAPPING_TOOL = HISAT2 ]]; then
-
- 
-
-  if [[ ! -f "$REF_GENOME" ]]; then
-    $WGET $BASE_REF_GENOME/$REF_GENOME
-    $TAR zxvf $REF_GENOME
-  else
-    $TAR zxvf $REF_GENOME
-  fi
 
   # mapping by hisat2
   for i in `tail -n +2  $EX_MATRIX_FILE | tr -d '\r'`
@@ -661,23 +633,6 @@ if [[ $MAPPING_TOOL = HISAT2 ]]; then
 fi
 
 if [[ $MAPPING_TOOL = STAR ]]; then
-
-  # download reference genome
-  if [[ $REF_SPECIES = mouse ]]; then
-    BASE_REF_GENOME=http://ftp.ensembl.org/pub/release-102/fasta/mus_musculus/dna
-    REF_GENOME=Mus_musculus.GRCm38.dna.primary_assembly.fa
-  elif [[ $REF_SPECIES = human ]]; then
-    BASE_REF_GENOME=ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37
-    REF_GENOME=GRCh38.primary_assembly.genome.fa
-  else
-    echo No reference genome!
-    exit
-  fi
-
-  if [[ ! -f "$REF_GENOME" ]]; then
-    $WGET $BASE_REF_GENOME/${REF_GENOME}.gz
-    gunzip ${REF_GENOME}.gz
-  fi
 
   # make indexes of reference genome
   if [[ ! -f "STAR_index/SAindex" ]]; then
@@ -752,8 +707,10 @@ fi
 
 
 # instance salmon index
+$SALMON_INDEX=salmon_index_${REF_TRANSCRIPT}
+
 if [[ ! -d "$SALMON_INDEX" ]]; then
-  $SALMON index --threads $THREADS --transcripts $REF_TRANSCRIPT --index $SALMON_INDEX -k 31 --gencode
+  $SALMON index --threads $THREADS --transcripts $REF_TRANSCRIPT --index $SALMON_INDEX -k 31 
 fi
 
 for i in `tail -n +2  $EX_MATRIX_FILE | tr -d '\r'`
