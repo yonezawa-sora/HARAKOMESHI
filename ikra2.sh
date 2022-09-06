@@ -1,5 +1,6 @@
 #!/bin/bash
 set -xe
+set -o pipefail
 
 # オプション関連ここから
 # 大部分は http://dojineko.hateblo.jp/entry/2016/06/30/225113 から引用させていただきました。
