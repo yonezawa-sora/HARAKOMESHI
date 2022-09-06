@@ -30,13 +30,11 @@ EOF
 function usage() {
   cat << EOS >&2        
 ikra ${VERSION} -RNAseq pipeline centered on Salmon-
-Usage: ${PROGNAME} experiment_table.csv [--test --fastq, --help, --without-docker, --udocker, --protein-coding] [--transcript [VALUE]][--genome [VALUE]][--threads [VALUE]][--output [VALUE]][--suffix_PE_1 [VALUE]][--suffix_PE_2 [VALUE]]
+Usage: ${PROGNAME} experiment_table.csv [--test --fastq, --help, --without-docker, --udocker, --protein-coding] [--threads [VALUE]][--output [VALUE]][--suffix_PE_1 [VALUE]][--suffix_PE_2 [VALUE]][--transcript [VALUE]][--genome [VALUE]]
   args
     1.experiment matrix(csv)
     2.reference(human or mouse)
 Options:
-  --transcript 
-  --genome
   --fastq use fastq files instead of SRRid. The extension must be foo.fastq.gz (default : False)
   -u, --udocker
   -w, --without-docker
@@ -112,23 +110,7 @@ for opt in "$@"; do
         '-w'|'--without-docker' )
             RUNINDOCKER=0; shift
             ;;
-        #　引数が任意の場合
-        '-tra' | '--transcript' )
-            if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
-                echo "$PROGNAME: option requires an argument -- $1" 1>&2
-                exit 1
-            fi
-              REF_TRANSCRIPT="$2"
-              shift 2
-              ;; 
-        '-gen' | '--genome' )
-          if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
-                echo "$PROGNAME: option requires an argument -- $1" 1>&2
-                exit 1
-            fi
-              REF_GENOME="$2"
-              shift 2
-              ;;  
+        #　引数が任意の場合 
         '-t'|'--threads' )
             THREADS=4; shift
             if [[ -n "$1" ]] && [[ ! "$1" =~ ^-+ ]]; then
@@ -191,7 +173,22 @@ for opt in "$@"; do
             M_GEN_VER="$2"
             shift 2
             ;;
-
+         '-tra' | '--transcript' )
+            if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
+                echo "$PROGNAME: option requires an argument -- $1" 1>&2
+                exit 1
+            fi
+              REF_TRANSCRIPT="$1"
+              shift 2
+              ;; 
+        '-gen' | '--genome' )
+          if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
+                echo "$PROGNAME: option requires an argument -- $1" 1>&2
+                exit 1
+            fi
+              REF_GENOME="$2"
+              shift 2
+              ;;  
         '-h' | '--help' )
             usage
             ;;
