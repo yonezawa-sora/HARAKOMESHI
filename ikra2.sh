@@ -47,8 +47,8 @@ Options:
   -g, --gencode specify the version of gencode. (defalut : Mouse=26, Human=37)
   -s1, --suffix_PE_1    suffix for PE fastq files. (default : _1.fastq.gz)
   -s2, --suffix_PE_2    suffix for PE fastq files. (default : _2.fastq.gz)
-  -tra, --transcript    specify reference transcriptome
-  -gen, --genome    specify reference genome
+  -tra, --transcript    specify reference transcriptome.
+  -gen, --genome    specify reference genome.
   -h, --help    Show usage.
   -v, --version Show version.
   -r, --remove-intermediates Remove intermediate files
@@ -146,7 +146,7 @@ for opt in "$@"; do
               shift 2
               ;;
           
-        '--transcript' )
+        '-tra'|'--transcript' )
         # outputfileの部分をコピーして変数を変更して適用
             if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
                 echo "$PROGNAME: option requires an argument -- $1" 1>&2
@@ -155,7 +155,7 @@ for opt in "$@"; do
               REF_TRANSCRIPT="$2"
               shift 2
               ;; 
-        '--genome' )
+        '-gen'|'--genome' )
            if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
                 echo "$PROGNAME: option requires an argument -- $1" 1>&2
                 exit 1
