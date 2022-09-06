@@ -20,6 +20,8 @@ Usage: ${PROGNAME} experiment_table.csv [--test --fastq, --help, --without-docke
     1.experiment matrix(csv)
     2.reference(human or mouse)
 Options:
+  --transcriptome Reference transcriptome
+  --genome Reference genome 
   --test  test mode(MAX_SPOT_ID=100000).(dafault : False)
   --fastq use fastq files instead of SRRid. The extension must be foo.fastq.gz (default : False)
   -u, --udocker
