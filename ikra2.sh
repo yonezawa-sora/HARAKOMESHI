@@ -707,7 +707,7 @@ fi
 
 
 # instance salmon index
-$SALMON_INDEX=salmon_index
+$SALMON_INDEX=salmon_index_2
 if [[ ! -d "$SALMON_INDEX" ]]; then
   $SALMON index --threads $THREADS --transcripts $REF_TRANSCRIPT --index $SALMON_INDEX -k 31 
 fi
