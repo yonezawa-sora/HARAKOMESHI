@@ -34,7 +34,6 @@ ikra ${VERSION} -RNAseq pipeline centered on Salmon-
 Usage: ${PROGNAME} experiment_table.csv [--test --fastq, --help, --without-docker, --udocker, --protein-coding] [--threads [VALUE]][--output [VALUE]][--suffix_PE_1 [VALUE]][--suffix_PE_2 [VALUE]][--transcript [VALUE]][--genome [VALUE]]
   args
     1.experiment matrix(csv)
-    2.reference(human or mouse)
 Options:
   --fastq use fastq files instead of SRRid. The extension must be foo.fastq.gz (default : False)
   -u, --udocker
@@ -48,6 +47,8 @@ Options:
   -g, --gencode specify the version of gencode. (defalut : Mouse=26, Human=37)
   -s1, --suffix_PE_1    suffix for PE fastq files. (default : _1.fastq.gz)
   -s2, --suffix_PE_2    suffix for PE fastq files. (default : _2.fastq.gz)
+  -tra, --transcript    specify reference transcriptome
+  -gen, --genome    specify reference genome
   -h, --help    Show usage.
   -v, --version Show version.
   -r, --remove-intermediates Remove intermediate files
