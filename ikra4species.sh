@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-# ヒト、マウスの部分を一回除いてシンプルにしました（220905）
+# ヒト、マウスの解析の部分とtximportの部分を除いてみました（220905）
 
 set -xe
 
@@ -601,7 +601,6 @@ fi
 if [ $IF_REMOVE_INTERMEDIATES = true ]; then
   rm -f *fastq.gz
   rm -f *fq.gz
-  rm -f gencode*.gz
   rm -f *fastqc.zip
   rm -rf salmon_output_*
 fi
