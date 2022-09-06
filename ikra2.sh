@@ -12,7 +12,7 @@ set -o pipefail
 # 以降の$1をEX_MATRIX_FILEで置き換える必要がある？(必要なら修正お願いします...)
 
 
-PROGNAME="$( basename $0 )"
+PROGNAME="$( basename "$0" )"
 
 VERSION="v2.0.1"
 
@@ -31,7 +31,7 @@ EOF
 function usage() {
   cat << EOS >&2        
 ikra ${VERSION} -RNAseq pipeline centered on Salmon-
-Usage: ${PROGNAME} experiment_table.csv [--test --fastq, --help, --without-docker, --udocker, --protein-coding] [--threads [VALUE]][--output [VALUE]][--suffix_PE_1 [VALUE]][--suffix_PE_2 [VALUE]][--transcript [VALUE]][--genome [VALUE]]
+Usage: ${PROGNAME} experiment_table.csv --transcript --genome [--test --fastq, --help, --without-docker, --udocker, --protein-coding] [--threads [VALUE]][--output [VALUE]][--suffix_PE_1 [VALUE]][--suffix_PE_2 [VALUE]]
   args
     1.experiment matrix(csv)
 Options:
@@ -80,8 +80,6 @@ IF_PC=True
 SUFFIX_PE_1=_1.fastq.gz
 SUFFIX_PE_2=_2.fastq.gz
 OUTPUT_FILE=output.tsv
-REF_TRANSCRIPT=.fasta.gz
-REF_GENOME=.fasta.gz
 LOG_FILE=ikra.log
 MAPPING_TOOL=None
 IF_REMOVE_INTERMEDIATES=false
@@ -224,10 +222,8 @@ done
 
 # オプション無しの値を使う場合はここで処理する
 EX_MATRIX_FILE="${PARAM}"; PARAM=("${PARAM[@]:1}")
-REF_SPECIES="${PARAM}"; PARAM=("${PARAM[@]:1}")
 
 [[ -z "${EX_MATRIX_FILE}" ]] && usage
-[[ -z "${REF_SPECIES}" ]] && usage
 
 # 規定外のオプションがある場合にはusageを表示
 if [[ -n "${PARAM[@]}" ]]; then
@@ -247,7 +243,6 @@ uname -n >> ${LOG_FILE}
 # 結果を表示(オプションテスト用)
 cat << EOS | column -t | tee -a ${LOG_FILE}
 EX_MATRIX_FILE ${EX_MATRIX_FILE}
-REF_SPECIES ${REF_SPECIES}
 RUNINDOCKER ${RUNINDOCKER}
 DOCKER ${DOCKER}
 THREADS ${THREADS}
@@ -273,36 +268,6 @@ MAXSIZE=25G
 SRA_ROOT=$HOME/ncbi/public/sra
 
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
-
-if [[ $REF_SPECIES = mouse ]]; then
-  BASE_REF_TRANSCRIPT=ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M${M_GEN_VER}
-  REF_TRANSCRIPT=gencode.vM${M_GEN_VER}.transcripts.fa.gz
-  if [ $IF_PC = false ]; then
-    REF_TRANSCRIPT=gencode.vM${M_GEN_VER}.transcripts.fa.gz
-  else
-    REF_TRANSCRIPT=gencode.vM${M_GEN_VER}.pc_transcripts.fa.gz
-  fi
-  SALMON_INDEX=salmon_index_mouse
-#   REF_GTF=gencode.vM${M_GEN_VER}.annotation.gtf.gz
-  TX2SYMBOL=gencode.vM${M_GEN_VER}.metadata.MGI.gz
-
-elif [[ $REF_SPECIES = human ]]; then
-  BASE_REF_TRANSCRIPT=ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_${H_GEN_VER}
-  # REF_TRANSCRIPT=gencode.v${H_GEN_VER}.pc_transcripts.fa.gz
-
-  if [ $IF_PC = false ]; then
-    REF_TRANSCRIPT=gencode.v${H_GEN_VER}.transcripts.fa.gz
-  else
-    REF_TRANSCRIPT=gencode.v${H_GEN_VER}.pc_transcripts.fa.gz
-  fi
-
-  SALMON_INDEX=salmon_index_human
-#   REF_GTF=gencode.v${H_GEN_VER}.annotation.gtf.gz
-  TX2SYMBOL=gencode.v${H_GEN_VER}.metadata.HGNC.gz
-else
-  echo No reference speice!
-  exit
-fi
 
 COWSAY=cowsay
 # PREFETCH=prefetch
@@ -621,19 +586,7 @@ fi
 
 if [[ $MAPPING_TOOL = HISAT2 ]]; then
 
-  # download reference genome index
-  if [[ $REF_SPECIES = mouse ]]; then
-    BASE_REF_GENOME=https://genome-idx.s3.amazonaws.com/hisat
-    REF_GENOME=mm10_genome.tar.gz
-    SPECIES_NAME=mm10
-  elif [[ $REF_SPECIES = human ]]; then
-    BASE_REF_GENOME=https://genome-idx.s3.amazonaws.com/hisat
-    REF_GENOME=hg38_genome.tar.gz
-    SPECIES_NAME=hg38
-  else
-    echo No reference genome!
-    exit
-  fi
+ 
 
   if [[ ! -f "$REF_GENOME" ]]; then
     $WGET $BASE_REF_GENOME/$REF_GENOME
