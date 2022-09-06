@@ -707,7 +707,8 @@ fi
 
 
 # instance salmon index
-$SALMON_INDEX=salmon_index_2
+
+SALMON_INDEX=salmon_index_${2}
 if [[ ! -d "$SALMON_INDEX" ]]; then
   $SALMON index --threads $THREADS --transcripts $REF_TRANSCRIPT --index $SALMON_INDEX -k 31 
 fi
@@ -775,7 +776,7 @@ fi
 
 # download $TX2SYMBOL
 if [[ ! -f "$TX2SYMBOL" ]]; then
-  $WGET $BASE_REF_TRANSCRIPT/$TX2SYMBOL
+  $WGET $TX2SYMBOL
 fi
 
 # tximport
