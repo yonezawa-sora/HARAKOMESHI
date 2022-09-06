@@ -3,8 +3,8 @@
 set -xe
 # basename コマンドを使ってスクリプト名だけ取り出している
 # $0は起動中のシェルスクリプト名がセットされている
-PROGNAME="$( basename $0 )"
-ERSION="v2.0.1"
+PROGNAME="$( basename "$0")"
+
 cat << "EOF" 
     __                       
  __/\ \                      
@@ -54,6 +54,8 @@ THREADS=1
 IF_TEST=false
 IF_FASTQ=false
 IF_PC=True
+REF_TRANSCRIPT=unchi.fasta
+REF_GENOME=unchi.fasta
 SUFFIX_PE_1=_1.fastq.gz
 SUFFIX_PE_2=_2.fastq.gz
 OUTPUT_FILE=output.tsv

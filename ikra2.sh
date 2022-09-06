@@ -78,11 +78,11 @@ IF_PC=True
 SUFFIX_PE_1=_1.fastq.gz
 SUFFIX_PE_2=_2.fastq.gz
 OUTPUT_FILE=output.tsv
+REF_TRANSCRIPT=.fasta.gz
+REF_GENOME=.fasta.gz
 LOG_FILE=ikra.log
 MAPPING_TOOL=None
 IF_REMOVE_INTERMEDIATES=false
-M_GEN_VER=26
-H_GEN_VER=37
 
 # オプションをパース
 # "$@は引数一つ一つがそれぞれ別のものとして認識される"
@@ -110,7 +110,7 @@ for opt in "$@"; do
         '-w'|'--without-docker' )
             RUNINDOCKER=0; shift
             ;;
-        #　引数が任意の場合 
+        #　引数が任意の場合
         '-t'|'--threads' )
             THREADS=4; shift
             if [[ -n "$1" ]] && [[ ! "$1" =~ ^-+ ]]; then
@@ -143,6 +143,25 @@ for opt in "$@"; do
               OUTPUT_FILE="$2"
               shift 2
               ;;
+          
+        '--transcript' )
+        # outputfileの部分をコピーして変数を変更して適用
+            if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
+                echo "$PROGNAME: option requires an argument -- $1" 1>&2
+                exit 1
+            fi
+              REF_TRANSCRIPT="$2"
+              shift 2
+              ;; 
+        '--genome' )
+           if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
+                echo "$PROGNAME: option requires an argument -- $1" 1>&2
+                exit 1
+            fi
+              REF_GENOME="$2"
+              shift 2
+              ;;  
+        
         '-l'|'--log' )
             if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
                 echo "$PROGNAME: option requires an argument -- $1" 1>&2
@@ -173,22 +192,7 @@ for opt in "$@"; do
             M_GEN_VER="$2"
             shift 2
             ;;
-         '-tra' | '--transcript' )
-            if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
-                echo "$PROGNAME: option requires an argument -- $1" 1>&2
-                exit 1
-            fi
-              REF_TRANSCRIPT="$1"
-              shift 2
-              ;; 
-        '-gen' | '--genome' )
-          if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
-                echo "$PROGNAME: option requires an argument -- $1" 1>&2
-                exit 1
-            fi
-              REF_GENOME="$2"
-              shift 2
-              ;;  
+
         '-h' | '--help' )
             usage
             ;;
@@ -293,15 +297,6 @@ elif [[ $REF_SPECIES = human ]]; then
   SALMON_INDEX=salmon_index_human
 #   REF_GTF=gencode.v${H_GEN_VER}.annotation.gtf.gz
   TX2SYMBOL=gencode.v${H_GEN_VER}.metadata.HGNC.gz
-
-# other species
-# リファレンスのデータを生物名にしてもらい、basenameで抜き出し変数に格納する?
-elif [[ $REF_SPECIES = other ]] ; then
-
-  FILE="*.fa.gz"
-  if [ -e $FILE]; then 
-  REF_TRANSCRIPT_OTHER="../../*.fa.gz" 
-  fi
 else
   echo No reference speice!
   exit
