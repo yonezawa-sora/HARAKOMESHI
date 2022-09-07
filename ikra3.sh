@@ -573,10 +573,6 @@ do
   fi
 done
 
-# download $REF_TRANSCRIPT
-if [[ ! -f "$REF_TRANSCRIPT" ]]; then
-  $WGET $BASE_REF_TRANSCRIPT/$REF_TRANSCRIPT
-fi
 
 # # download $REF_GTF
 # if [[ ! -f "$REF_GTF" ]]; then
