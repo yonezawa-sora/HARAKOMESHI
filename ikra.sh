@@ -1,5 +1,6 @@
 #!/bin/bash
 set -xe
+set -o pipefail
 
 # オプション関連ここから
 # 大部分は http://dojineko.hateblo.jp/entry/2016/06/30/225113 から引用させていただきました。
@@ -279,14 +280,6 @@ elif [[ $REF_SPECIES = human ]]; then
 #   REF_GTF=gencode.v${H_GEN_VER}.annotation.gtf.gz
   TX2SYMBOL=gencode.v${H_GEN_VER}.metadata.HGNC.gz
 
-# other species
-# リファレンスのデータを生物名にしてもらい、basenameで抜き出し変数に格納する?
-elif [[ $REF_SPECIES = other ]] ; then
-
-  FILE="*.fa.gz"
-  if [ -e $FILE]; then 
-  REF_TRANSCRIPT_OTHER="../../*.fa.gz" 
-  fi
 else
   echo No reference speice!
   exit
