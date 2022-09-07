@@ -436,7 +436,8 @@ COMMENTOUT
 # fasterq_dump
   # SE
   # $LAYOUTの部分でunary operator expectedのエラー（220907）""でかこむ
-  if [ "$LAYOUT" = "SE" ]; then
+  # csvファイルに変な空白があったのでここを修正すると正常に動くようになった
+  if [ $LAYOUT = SE ]; then
     # fastq_dump
     if [[ ! -f "$SRR.fastq.gz" ]]; then
       if [[ $MAX_SPOT_ID == "" ]]; then
