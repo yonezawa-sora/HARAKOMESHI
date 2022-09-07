@@ -435,7 +435,8 @@ COMMENTOUT
 
 # fasterq_dump
   # SE
-  if [ $LAYOUT = SE ]; then
+  # $LAYOUTの部分でunary operator expectedのエラー（220907）""でかこむ
+  if [ "$LAYOUT" = "SE" ]; then
     # fastq_dump
     if [[ ! -f "$SRR.fastq.gz" ]]; then
       if [[ $MAX_SPOT_ID == "" ]]; then
