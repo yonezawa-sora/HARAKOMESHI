@@ -233,7 +233,7 @@ fi
 
 
 cat << EOS | tee -a ${LOG_FILE}
-ikra ${VERSION} -RNAseq pipeline centered on Salmon-
+ikra3 ${VERSION} -RNAseq pipeline centered on Salmon-
 EOS
 
 date >> ${LOG_FILE}
@@ -738,7 +738,7 @@ fi
 
 
 # instance salmon index
-# リファレンスに使用したい配列をフルパス指定してしまうと、マウントされていないファイルなので使うことができない
+# リファレンスに使用したい配列をフルパス指定してしまうと、マウントされていないファイルなので使うことができない(米澤メモ)
 SALMON_INDEX=salmon_index
 
 if [[ ! -d "$SALMON_INDEX" ]]; then
