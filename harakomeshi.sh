@@ -2,28 +2,26 @@
 set -xe
 set -o pipefail
 
+# このスクリプトは、米澤奏良が勉強用に書いているスクリプトです｡
+# 大部分は http://dojineko.hateblo.jp/entry/2016/06/30/225113 から引用させていただきました。(ikraより)
 
 
-# オプション関連ここから
-# 大部分は http://dojineko.hateblo.jp/entry/2016/06/30/225113 から引用させていただきました。
+####################
 
-# 変数 EX_MATRIX_FILE, REF_SPECIES はここで定義
-# if [[ $IF_TEST = true ]]; then でテストモード用の実行が可能
-
-
+# オプション関連は以下から
 PROGNAME="$( basename $0 )"
 
 VERSION="v1.0"
 
-
-# Usage
+# Usage 
+# function usage()は、ヘルプを表示する関数
 function usage() {
-  cat << EOS >&2        
+  cat << EOS >&2   # 標準エラー出力にリダイレクト   
 Harakomeshi ${VERSION} -RNAseq pipeline centered on Salmon for plants-
 Usage: ${PROGNAME} experiment_table.csv species [--test --fastq, --help, --without-docker, --udocker, --protein-coding] [--threads [VALUE]][--output [VALUE]][--suffix_PE_1 [VALUE]][--suffix_PE_2 [VALUE]]
   args
     1.experiment matrix(csv)
-    2.reference(human or mouse)
+    2.reference
 Options:
   --fastq use fastq files instead of SRRid. The extension must be foo.fastq.gz (default : False)
   -u, --udocker
@@ -41,19 +39,16 @@ Options:
   -v, --version Show version.
   -r, --remove-intermediates Remove intermediate files
 
-Citation :
-Hiraoka, Y., Yamada, K., Yamasaki, R., Kawasaki, Y., Kitabatake, R., Matsumoto, Y., Ishikawa, K., Umezu, Y., Hirose, H., & Yasumizu, Y. (2021). ikra v2.0: RNAseq pipeline centered on Salmon. https://doi.org/10.5281/zenodo.4718200
-
-Github repo : https://github.com/yyoshiaki/ikra
 EOS
   exit 1
 }
 
 
 # version
+# function version()は、バージョンを表示する関数
 function version() {
   cat << EOS >&2
-ikra ${VERSION} -RNAseq pipeline centered on Salmon-
+ikra ${VERSION} -RNAseq pipeline centered on Salmon for plants-
 EOS
   exit 1
 }
