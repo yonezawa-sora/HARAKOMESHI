@@ -6,29 +6,36 @@ set -o pipefail
 
 PROGNAME="$( basename $0 )" # Program name
 
+VERSION="v0.0.1" # Version
+
 # Usage
 function usage() {
-    echo "Usage: $0 <SRR csv file> [threads [VALUE]]"
-    echo "Options:"
-    echo "  -h, --help    Show usage."
+    cat << EOS >&2 
+${PROGNAME} ${VERSION} 
+    Usage: $0 <SRR csv file> [-t | --threads [VALUE], -h | --help]
+    args:
+        SRR csv file (ikra format)
+    Optional args:
+        -t, --threads: number of threads (default: 4)
+        -h, --help: print help
+EOS
     exit 1
 }
 
 # Get Arguments
-csv_file=$1
-
-shift # shift command moves the positional parameters to the left by one!!
+csv_file=$1; shift # shift command moves the positional parameters to the left by one!!
 
 # Parse options （Referring to ikra.sh）
-while (( $# )); do
-    case "$1" in
+PARAM=()
+for opt in "$@"; do
+    case "$opt" in
         '-t'|'--threads' )
             THREADS=4; shift
             if [[ -n "$1" ]] && [[ ! "$1" =~ ^-+ ]]; then
                 THREADS="$1"; shift
             fi
             ;;
-        -h|--help)
+        '-h'| '--help' )
             usage
             ;;
         *)
@@ -42,38 +49,33 @@ if [ -z "$csv_file" ]; then # 引数が空の場合､usageを表示
     usage
 fi
 
-if [ -z "$THREADS" ]; then # 引数がない場合､THREADSに4を代入
-    THREADS=4
-fi
+tail -n +2 $csv_file | tr -d '\r' | while read i; do
+    name=$(echo $i | cut -d ',' -f 1)
+    SRR=$(echo $i | cut -d ',' -f 2)
+    LAYOUT=$(echo $i | cut -d ',' -f 3)
+    dirname_fq="./"
 
+# Separate process for SE and PE
+    if [ "$LAYOUT" = "SE" ]; then
+    # if SE...
+    fastp -i "${SRR}.fastq.gz" -o "${SRR}_trimmed.fq.gz" -h "${SRR}.html" -j "${SRR}.json" -w $THREADS
+    # fastp command is successful, remove the original fastq file
+    rm "${SRR}.fastq.gz"
 
-
-
-
-# Read from text file one row at a time
-while IFS=, read -r name srr layout condition; do
-    echo "Processing $name, $srr, $layout, $condition"
-
-    # Separate process for SE and PE
-    if [ "$layout" = "SE" ]; then
-        # if SE...
-        fastp -i "${srr}.fastq.gz" -o "${srr}_trimmed.fq.gz" -h "${srr}.html" -j "${srr}.json" -w $THREADS
-        # fastp command is successful, remove the original fastq file
-        rm "${srr}.fastq.gz"
-
-    elif [ "$layout" = "PE" ]; then
-        # if PE...
-        fastp -i "${srr}_1.fastq.gz" -I "${srr}_2.fastq.gz" -o "${srr}_1_trimmed.fq.gz" -O "${srr}_2_trimmed.fq.gz" -h "${srr}.html" -j "${srr}.json" -w $THREADS --detect_adapter_for_pe
-        # fastp command is successful, remove the original fastq files
-        rm "${srr}_1.fastq.gz"
-        rm "${srr}_2.fastq.gz"
+    elif [ "$LAYOUT" = "PE" ]; then
+     # if PE...
+    fastp -i "${SRR}_1.fastq.gz" -I "${SRR}_2.fastq.gz" -o "${SRR}_1_trimmed.fq.gz" -O "${SRR}_2_trimmed.fq.gz" -h "${SRR}.html" -j "${SRR}.json" -w $THREADS --detect_adapter_for_pe
+    # fastp command is successful, remove the original fastq files
+    rm "${SRR}_1.fastq.gz"
+    rm "${SRR}_2.fastq.gz"
     else
-        echo "Invalid layout: $layout"
-        echo "See fastp --help"
-        exit 1
+    echo "Invalid layout: $LAYOUT"
+    echo "See fastp --help"
+    exit 1
     fi 
+done
 
-done < "$csv_file"
+################################## Salmon ##################################
 
 cat << EOS
 RUN : success!
