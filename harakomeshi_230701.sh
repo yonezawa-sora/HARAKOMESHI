@@ -49,6 +49,8 @@ if [ -z "$csv_file" ]; then # 引数が空の場合､usageを表示
     usage
 fi
 
+################################## fastp ##################################
+
 tail -n +2 $csv_file | tr -d '\r' | while read i; do
     name=$(echo $i | cut -d ',' -f 1)
     SRR=$(echo $i | cut -d ',' -f 2)
@@ -76,6 +78,19 @@ tail -n +2 $csv_file | tr -d '\r' | while read i; do
 done
 
 ################################## Salmon ##################################
+
+# instance salmon index
+
+
+# quantification
+
+tail -n +2 $csv_file | tr -d '\r' | while read i; do
+    name=$(echo $i | cut -d ',' -f 1)
+    SRR=$(echo $i | cut -d ',' -f 2)
+    LAYOUT=$(echo $i | cut -d ',' -f 3)
+    dirname_fq=""
+
+done
 
 cat << EOS
 RUN : success!
