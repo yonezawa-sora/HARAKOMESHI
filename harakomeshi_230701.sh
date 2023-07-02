@@ -37,12 +37,18 @@ while (( $# )); do
     esac
 done
 
-# Argument Checking
-# '$# -ne 2' means 'if the number of arguments is not 2'
+# Arguments Check
+if [ -z "$csv_file" ]; then # 引数が空の場合､usageを表示
+    usage
+fi
 
-if [ -z "$THREADS" ]; then
+if [ -z "$THREADS" ]; then # 引数がない場合､THREADSに4を代入
     THREADS=4
 fi
+
+
+
+
 
 # Read from text file one row at a time
 while IFS=, read -r name srr layout condition; do
@@ -52,13 +58,13 @@ while IFS=, read -r name srr layout condition; do
     if [ "$layout" = "SE" ]; then
         # if SE...
         fastp -i "${srr}.fastq.gz" -o "${srr}_trimmed.fq.gz" -h "${srr}.html" -j "${srr}.json" -w $THREADS
-        # If fastp command is successful, remove the original fastq file
+        # fastp command is successful, remove the original fastq file
         rm "${srr}.fastq.gz"
 
     elif [ "$layout" = "PE" ]; then
         # if PE...
         fastp -i "${srr}_1.fastq.gz" -I "${srr}_2.fastq.gz" -o "${srr}_1_trimmed.fq.gz" -O "${srr}_2_trimmed.fq.gz" -h "${srr}.html" -j "${srr}.json" -w $THREADS --detect_adapter_for_pe
-        # If fastp command is successful, remove the original fastq files
+        # fastp command is successful, remove the original fastq files
         rm "${srr}_1.fastq.gz"
         rm "${srr}_2.fastq.gz"
     else
