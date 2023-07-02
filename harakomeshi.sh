@@ -2,7 +2,7 @@
 set -xe
 set -o pipefail
 
-# このスクリプトは、米澤奏良が勉強用に書いているスクリプトです｡
+# メモ：このスクリプトは、米澤奏良(https://github.com/yonezawa-sora)が勉強用に書き直しているスクリプトです｡
 # 大部分は http://dojineko.hateblo.jp/entry/2016/06/30/225113 から引用させていただきました。(ikraより)
 
 
@@ -13,38 +13,24 @@ PROGNAME="$( basename $0 )"
 
 VERSION="v1.0"
 
-# Usage 
+# <1.Usage >
 # function usage()は、ヘルプを表示する関数
 function usage() {
   cat << EOS >&2   # 標準エラー出力にリダイレクト   
 Harakomeshi ${VERSION} -RNAseq pipeline centered on Salmon for plants-
-Usage: ${PROGNAME} experiment_table.csv species [--test --fastq, --help, --without-docker, --udocker, --protein-coding] [--threads [VALUE]][--output [VALUE]][--suffix_PE_1 [VALUE]][--suffix_PE_2 [VALUE]]
+Usage: ${PROGNAME} experiment_table.csv species [options]
   args
     1.experiment matrix(csv)
-    2.reference
+    2.reference (rice) #現在はriceのみ対応
 Options:
-  --fastq use fastq files instead of SRRid. The extension must be foo.fastq.gz (default : False)
-  -u, --udocker
-  -w, --without-docker
-  -pc, --protein-coding use protein coding transcripts instead of comprehensive transcripts. (defalut : True)
-  -ct, --comprehensive-transcripts use comprehensive transcripts instead of protein coding transcripts. (default : False) 
-  -t, --threads
-  -o, --output  output file. (default : output.tsv)  
-  -l, --log  log file. (default : ikra.log)
-  -a, --align carry out mapping onto a reference genome. hisat2 or star (default : None)
-  -g, --gencode specify the version of gencode. (defalut : Mouse=26, Human=37)
-  -s1, --suffix_PE_1    suffix for PE fastq files. (default : _1.fastq.gz)
-  -s2, --suffix_PE_2    suffix for PE fastq files. (default : _2.fastq.gz)
-  -h, --help    Show usage.
-  -v, --version Show version.
-  -r, --remove-intermediates Remove intermediate files
+  -t, --threads NUM  Number of threads (default: 4)
 
 EOS
   exit 1
 }
 
 
-# version
+# <2.version>
 # function version()は、バージョンを表示する関数
 function version() {
   cat << EOS >&2
@@ -53,73 +39,25 @@ EOS
   exit 1
 }
 
-# デフォルト値を先に定義しておく
+# <3.Default value>
+# デフォルト値を先に定義しておく(ikraより)
+# ここで定義した変数は、オプションで上書きされる?
 RUNINDOCKER=1
 DOCKER=docker
-THREADS=1
-IF_TEST=false
-IF_FASTQ=false
-IF_PC=True
-SUFFIX_PE_1=_1.fastq.gz
-SUFFIX_PE_2=_2.fastq.gz
-OUTPUT_FILE=output.tsv
-LOG_FILE=ikra.log
-MAPPING_TOOL=None
-IF_REMOVE_INTERMEDIATES=false
-M_GEN_VER=26
-H_GEN_VER=37
+THREADS=4
 
-# オプションをパース
-# "$@は引数一つ一つがそれぞれ別のものとして認識される"
+# <4.parse options>
 # "PARAM=()"で変数の指定が可能
 
 PARAM=()
-for opt in "$@"; do
-    case "${opt}" in
-        #　モード選択など引数の無いオプションの場合
-        '--test' )
-            IF_TEST=true; shift
-            ;;
-        '--fastq' )
-            IF_FASTQ=true; shift
-            ;;
-        '-pc'|'--protein-coding' )
-            IF_PC=true; shift
-            ;;
-        '-ct'|'--comprehensive-transcripts' )
-            IF_PC=true; shift
-            ;;
-        '-u'|'--udocker' )
-            DOCKER=udocker; shift
-            ;;
-        '-w'|'--without-docker' )
-            RUNINDOCKER=0; shift
-            ;;
-        #　引数が任意の場合
-        '-t'|'--threads' )
-            THREADS=4; shift
-            if [[ -n "$1" ]] && [[ ! "$1" =~ ^-+ ]]; then
-                THREADS="$1"; shift
+for opt in "$@"; do # $@は引数の配列
+    case "${opt}" in # case文でオプションを判別
+        '-t'|'--threads' ) # -tまたは--threadsを指定した場合
+            THREADS=4; shift # THREADSに4を代入して、shiftで$1を削除
+            if [[ -n "$1" ]] && [[ ! "$1" =~ ^-+ ]]; then # $1が空でなく、かつ、$1がオプションでない場合
+                THREADS="$1"; shift # THREADSに$1を代入して、$1を削除
             fi
             ;;
-        '-s1'|'--suffix_PE_1' )
-            if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
-                echo "$PROGNAME: option requires an argument -- $1" 1>&2
-                exit 1
-            fi
-            SUFFIX_PE_1="$2"
-            shift 2
-            ;;
-
-        '-s2'|'--suffix_PE_2' )
-            if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
-                echo "$PROGNAME: option requires an argument -- $1" 1>&2
-                exit 1
-            fi
-            SUFFIX_PE_2="$2"
-            shift 2
-            ;;
-
         '-o'|'--output' )
             if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
                 echo "$PROGNAME: option requires an argument -- $1" 1>&2
@@ -136,24 +74,6 @@ for opt in "$@"; do
               LOG_FILE="$2"
               shift 2
                 ;;
-
-        '-a'|'--align' )
-            if [[ "$2" == "hisat2" ]]; then
-                MAPPING_TOOL=HISAT2
-            elif [[ "$2" == "star" ]]; then
-                MAPPING_TOOL=STAR
-            elif [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
-                echo "$PROGNAME: option requires an argument -- $1" 1>&2
-                exit 1
-            fi
-              shift 2
-                ;;
-
-        '-g'|'--gencode' )
-            if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
-                echo "${PROGNAME}: option requires an argument -- $( echo $1 | sed 's/^-*//' )" 1>&2
-                exit 1
-            fi
             H_GEN_VER="$2"
             M_GEN_VER="$2"
             shift 2
@@ -179,18 +99,21 @@ for opt in "$@"; do
             exit 1
             ;;
         * )
-            if [[ -n "$1" ]] && [[ ! "$1" =~ ^-+ ]]; then
-                PARAM+=( "$1" ); shift
+            if [[ -n "$1" ]] && [[ ! "$1" =~ ^-+ ]]; then # $1が空でなく、かつ、$1がオプションでない場合
+                PARAM+=( "$1" ); shift # $1をPARAMに追加して、$1を削除
             fi
             ;;
-    esac
+    esac # case文の終了
 done
 
-# オプション無しの値を使う場合はここで処理する
-EX_MATRIX_FILE="${PARAM}"; PARAM=("${PARAM[@]:1}")
-REF_SPECIES="${PARAM}"; PARAM=("${PARAM[@]:1}")
+# <5.Check parameters> 
 
-[[ -z "${EX_MATRIX_FILE}" ]] && usage
+# 必須のパラメータ(ikraでは2つ)が指定されているかチェックする
+EX_MATRIX_FILE="${PARAM}"; PARAM=("${PARAM[@]:1}") # PARAMの先頭をEX_MATRIX_FILEに代入して、PARAMの先頭を削除
+REF_SPECIES="${PARAM}"; PARAM=("${PARAM[@]:1}") # PARAMの先頭をREF_SPECIESに代入して、PARAMの先頭を削除
+
+# -zとは､変数が空であるかどうかを判定する｡
+[[ -z "${EX_MATRIX_FILE}" ]] && usage # -zでEX_MATRIX_FILEが空であるかどうかを判定し、空であればusageを表示
 [[ -z "${REF_SPECIES}" ]] && usage
 
 # 規定外のオプションがある場合にはusageを表示
@@ -199,36 +122,29 @@ if [[ -n "${PARAM[@]}" ]]; then
 fi
 
 
-cat << EOS | tee -a ${LOG_FILE}
-ikra ${VERSION} -RNAseq pipeline centered on Salmon-
+# <6.make log file>
+cat << EOS | tee -a ${LOG_FILE} # tee -aでログファイルに書き込み
+harakomeshi ${VERSION} -RNAseq pipeline centered on Salmon for plants-
 EOS
 
-date >> ${LOG_FILE}
-pwd >> ${LOG_FILE}
-whoami >> ${LOG_FILE}
-uname -n >> ${LOG_FILE}
+date >> ${LOG_FILE} # 現在時刻を表示
+pwd >> ${LOG_FILE} # カレントディレクトリを表示
+whoami >> ${LOG_FILE} # ユーザー名を表示
+uname -n >> ${LOG_FILE} # ホスト名を表示
 
+
+# <7.オプションテスト用>
 # 結果を表示(オプションテスト用)
 cat << EOS | column -t | tee -a ${LOG_FILE}
-EX_MATRIX_FILE ${EX_MATRIX_FILE}
-REF_SPECIES ${REF_SPECIES}
-RUNINDOCKER ${RUNINDOCKER}
-DOCKER ${DOCKER}
 THREADS ${THREADS}
-IF_TEST ${IF_TEST:-false}
-IF_FASTQ ${IF_FASTQ:-false}
-IF_PC ${IF_PC:-false}
-IF_REMOVE_INTERMEDIATES ${IF_REMOVE_INTERMEDIATES:-false}
 OUTPUT_FILE ${OUTPUT_FILE}
-MAPPING_TOOL ${MAPPING_TOOL}
-M_GEN_VER ${M_GEN_VER}
-H_GEN_VER ${H_GEN_VER}
 LOG_FILE ${LOG_FILE}
 EOS
 
-set -u
+set -u # 未定義変数を使おうとしたらエラーを出力する
 
-#　オプション関連ここまで
+####################
+
 
 # 実験テーブル.csv
 
@@ -269,18 +185,11 @@ else
   exit
 fi
 
+# 変数の定義
 COWSAY=cowsay
-# PREFETCH=prefetch
 FASTQ_DUMP=fastq-dump
 FASTERQ_DUMP=fasterq-dump
-FASTQC=fastqc
-MULTIQC=multiqc
-# TRIMMOMATIC=trimmomatic
-TRIMGALORE=trim_galore
-HISAT2=hisat2
-STAR_MAPPING=STAR
-SAMBAMBA=sambamba
-BAMCOVERAGE=bamCoverage
+FASTP=fastp # fastpを追加
 SALMON=salmon
 RSCRIPT_TXIMPORT=Rscript
 WGET=wget
@@ -300,93 +209,53 @@ if [[ "$RUNINDOCKER" -eq "1" ]]; then
   SCRIPT_DIR=`dirname "$0"`
   #--user=biodocker
 
-  # 危険！
-  # chmod 777 .
-
+# docker image version check
+# fastpも後で追加しようと考えています
   COWSAY_IMAGE=docker/whalesay
-  # quay.io/biocontainers/sra-tools:2.10.7--pl526haddd2b5_1 had an error.
-  # the earlier version may stop during the download.
   SRA_TOOLKIT_IMAGE=quay.io/biocontainers/sra-tools:2.10.9--pl526haddd2b5_0
-  FASTQC_IMAGE=biocontainers/fastqc:v0.11.9_cv8
-  MULTIQC_IMAGE=quay.io/biocontainers/multiqc:1.10.1--py_0
-#   TRIMMOMATIC_IMAGE=fjukstad/trimmomatic
-#   TRIMMOMATIC_IMAGR=comics/trimmomatic
-  TRIMGALORE_IMAGE=quay.io/biocontainers/trim-galore:0.6.7--hdfd78af_0
-  HISAT2_IMAGE=quay.io/biocontainers/hisat2:2.2.1--h1b792b2_3
-  STAR_IMAGE=quay.io/biocontainers/star:2.7.8a--h9ee0642_1
-  SAMBAMBA_IMAGE=quay.io/biocontainers/sambamba:0.8.0--h984e79f_0
   SALMON_IMAGE=combinelab/salmon:1.4.0
-#   SALMON_IMAGE=fjukstad/salmon
   RSCRIPT_TXIMPORT_IMAGE=fjukstad/tximport
   WGET_IMAGE=fjukstad/tximport
   PIGZ_IMAGE=genevera/docker-pigz
   TAR_IMAGE=fjukstad/tximport
-  BAMCOVERAGE_IMAGE=quay.io/biocontainers/deeptools:3.5.1--py_0
+
 
   $DOCKER pull $COWSAY_IMAGE
   $DOCKER pull $SRA_TOOLKIT_IMAGE
-  $DOCKER pull $FASTQC_IMAGE
-  $DOCKER pull $MULTIQC_IMAGE
-  # $DOCKER pull $TRIMMOMATIC_IMAGE
-  $DOCKER pull $TRIMGALORE_IMAGE
-  $DOCKER pull $HISAT2_IMAGE
-  $DOCKER pull $STAR_IMAGE
-  $DOCKER pull $SAMBAMBA_IMAGE
-  $DOCKER pull $BAMCOVERAGE_IMAGE
   $DOCKER pull $SALMON_IMAGE
   $DOCKER pull $RSCRIPT_TXIMPORT_IMAGE
   $DOCKER pull $PIGZ_IMAGE
   $DOCKER pull $TAR_IMAGE
 
+# 変数の定義を上書き
   COWSAY="$DRUN $COWSAY_IMAGE $COWSAY"
-  # PREFETCH="$DRUN -v $PWD:/root/ncbi/public/sra $SRA_TOOLKIT_IMAGE $PREFETCH"
-  # FASTQ_DUMP="$DRUN $SRA_TOOLKIT_IMAGE $FASTQ_DUMP"
   FASTQ_DUMP="$FASTQ_DUMP"
-#  FASTERQ_DUMP="$DRUN $SRA_TOOLKIT_IMAGE $FASTERQ_DUMP"
   FASTQC="$DRUN $FASTQC_IMAGE $FASTQC" 
   FASTQ_DUMP="$FASTQ_DUMP"
   FASTERQ_DUMP="$FASTERQ_DUMP"
-  MULTIQC="$DRUN $MULTIQC_IMAGE $MULTIQC"
-#   TRIMMOMATIC="$DRUN $TRIMMOMATIC_IMAGE $TRIMMOMATIC"
-  # TRIMMOMATIC="$DRUN $TRIMMOMATIC_IMAGE " # fjukstad/trimmomaticのentrypointのため
-  TRIMGALORE="$DRUN $TRIMGALORE_IMAGE $TRIMGALORE"
-  HISAT2="$DRUN $HISAT2_IMAGE $HISAT2"
-  STAR_MAPPING="$DRUN $STAR_IMAGE $STAR_MAPPING"
-  SAMBAMBA="$DRUN $SAMBAMBA_IMAGE $SAMBAMBA"
-  BAMCOVERAGE="$DRUN $BAMCOVERAGE_IMAGE $BAMCOVERAGE"
   SALMON="$DRUN $SALMON_IMAGE $SALMON"
-#   SALMON="$DRUN $SALMON_IMAGE"
   RSCRIPT_TXIMPORT="$DRUN $RSCRIPT_TXIMPORT_IMAGE $RSCRIPT_TXIMPORT"
   WGET="$DRUN $WGET_IMAGE $WGET"
   PIGZ="$DRUN $PIGZ_IMAGE"
   TAR="$DRUN $TAR_IMAGE $TAR"
 
-   # docker run --rm -v $PWD:/data -v $PWD:/root/ncbi/public/sra --workdir /data -it inutano/sra-toolkit bash
+# docker run --rm -v $PWD:/data -v $PWD:/root/ncbi/public/sra --workdir /data -it inutano/sra-toolkit bash
 else
   echo "RUNNING LOCAL"
-fi
-
-
-# if [ $MAX_SPOT_ID = 0 ]; then
-if [ $IF_TEST = true ]; then
-  $COWSAY "test mode( MAX_SPOT_ID is set)"
-  MAX_SPOT_ID="-X 100000"
-else
-  MAX_SPOT_ID=""
 fi
 
 echo $EX_MATRIX_FILE
 cat $EX_MATRIX_FILE
 
-# tximport
-if [[  -f "tximport_R.R" ]]; then
+# tximport_R.Rを削除
+if [[  -f "tximport_R.R" ]]; then # 既にある場合は削除
   rm tximport_R.R
 fi
 
 # # tximport_R.Rを取ってくる。
 # cp $SCRIPT_DIR/tximport_R.R ./
 
-# 2019/06/09 devv1.3 tximport_R.Rを埋め込み
+# 2019/06/09 devv1.3 tximport_R.Rを埋め込み(ikraより)
 
 cat << 'EOF' > tximport_R.R
 #! /usr/bin/Rscript
@@ -416,34 +285,20 @@ write.table(txi.salmon$counts, file=args3, sep="\t",col.names=NA,row.names=T,quo
 write.table(exp.table[-c(2,3)], file="designtable.csv",row.names=F,quote=F,append=F)
 EOF
 
-if [ $IF_FASTQ = false ]; then
-# fastq_dump
-for i in `tail -n +2  $EX_MATRIX_FILE | tr -d '\r'`
-do
-name=`echo $i | cut -d, -f1`
-SRR=`echo $i | cut -d, -f2`
-LAYOUT=`echo $i | cut -d, -f3`
-# ADAPTER=`echo $i | cut -d, -f4`
 
-<<COMMENTOUT
-There is no -N|--minSpotId and no -X|--maxSpotId option.
-fasterq-dump version 2.9.1 processes always the whole accession,
-although it may support partial access in future versions.
-ということで条件分岐させる。
-COMMENTOUT
+####################
 
-# fasterq_dump
+# Process1:fasterq_dump
   # SE
   if [ $LAYOUT = SE ]; then
-    # fastq_dump
+    # fasterq_dump
     if [[ ! -f "$SRR.fastq.gz" ]]; then
-      if [[ $MAX_SPOT_ID == "" ]]; then
-        $FASTERQ_DUMP $SRR --threads $THREADS --force -p
-        # gzip $SRR.fastq
-        $PIGZ $SRR.fastq
-      else
-        $FASTQ_DUMP $SRR $MAX_SPOT_ID --gzip
-      fi
+      $FASTERQ_DUMP $SRR --threads $THREADS --force -p
+      # gzip $SRR.fastq
+      $PIGZ $SRR.fastq
+    else
+      echo "ERROR: Check the sra-tools version"
+    
     fi
 
     # fastqc
@@ -453,17 +308,13 @@ COMMENTOUT
 
   # PE
   else
-    # fastq_dump
+    # fasterq_dump
     if [[ ! -f "${SRR}_1.fastq.gz" ]]; then
-      if [[ $MAX_SPOT_ID == "" ]]; then
-        $FASTERQ_DUMP $SRR --split-files --threads $THREADS --force -p
-        # gzip ${SRR}_1.fastq
-        # gzip ${SRR}_2.fastq
-        $PIGZ ${SRR}_1.fastq
-        $PIGZ ${SRR}_2.fastq
-      else
-        $FASTQ_DUMP $SRR $MAX_SPOT_ID --gzip --split-files
-      fi
+      $FASTERQ_DUMP $SRR --split-files --threads $THREADS --force -p
+      $PIGZ ${SRR}_1.fastq
+      $PIGZ ${SRR}_2.fastq
+    else
+      echo "ERROR: Check the sra-tools version"
     fi
 
     # fastqc
@@ -488,9 +339,9 @@ else
 fi
 
 
-for i in `tail -n +2  $EX_MATRIX_FILE | tr -d '\r'`
+for i in `tail -n +2  $EX_MATRIX_FILE | tr -d '\r'` 
 do
-  if [ $IF_FASTQ = false ]; then
+  if [ $IF_FASTQ = false ]; then 
     # fasterq_dump
     name=`echo $i | cut -d, -f1`
     SRR=`echo $i | cut -d, -f2`
@@ -575,193 +426,7 @@ if [[ ! -f "$REF_TRANSCRIPT" ]]; then
   $WGET $BASE_REF_TRANSCRIPT/$REF_TRANSCRIPT
 fi
 
-# # download $REF_GTF
-# if [[ ! -f "$REF_GTF" ]]; then
-#   wget $BASE_REF_TRANSCRIPT/$REF_GTF
-# fi
-
 ################################
-# --alignモードの時にalignmentを行いbamファイルを生成する
-# 2021年4月追加（山崎）
-
-if [[ $MAPPING_TOOL = HISAT2 ]]; then
-
-  # download reference genome index
-  if [[ $REF_SPECIES = mouse ]]; then
-    BASE_REF_GENOME=https://genome-idx.s3.amazonaws.com/hisat
-    REF_GENOME=mm10_genome.tar.gz
-    SPECIES_NAME=mm10
-  elif [[ $REF_SPECIES = human ]]; then
-    BASE_REF_GENOME=https://genome-idx.s3.amazonaws.com/hisat
-    REF_GENOME=hg38_genome.tar.gz
-    SPECIES_NAME=hg38
-  else
-    echo No reference genome!
-    exit
-  fi
-
-  if [[ ! -f "$REF_GENOME" ]]; then
-    $WGET $BASE_REF_GENOME/$REF_GENOME
-    $TAR zxvf $REF_GENOME
-  else
-    $TAR zxvf $REF_GENOME
-  fi
-
-  # mapping by hisat2
-  for i in `tail -n +2  $EX_MATRIX_FILE | tr -d '\r'`
-  do
-    if [ $IF_FASTQ = false ]; then
-      # fasterq_dump
-      name=`echo $i | cut -d, -f1`
-      SRR=`echo $i | cut -d, -f2`
-      LAYOUT=`echo $i | cut -d, -f3`
-      dirname_fq=""
-    else
-      name=`echo $i | cut -d, -f1`
-      fq=`echo $i | cut -d, -f2`
-      LAYOUT=`echo $i | cut -d, -f3`
-      fqname_ext="${fq##*/}"
-      # echo $fqname_ext
-
-      # ファイル名を取り出す（拡張子なし）
-      # basename_fq="${fqname_ext%.*.*}"
-      basename_fq=${fqname_ext}
-      dirname_fq=`dirname $fq`
-      dirname_fq=${dirname_fq}/
-      SRR=${basename_fq}
-    fi
-
-    # SE
-    if [ $LAYOUT = SE ]; then
-      if [[ ! -f "hisat2_output_${SRR}/${SRR}.sam" ]]; then
-        mkdir hisat2_output_${SRR}
-        # libtype auto detection mode
-        $HISAT2\
-        -p $THREADS \
-        --dta \
-        -x $SPECIES_NAME/genome \
-        -U ${dirname_fq}${SRR}_trimmed.fq.gz \
-        -S hisat2_output_${SRR}/${SRR}.sam
-      fi
-
-    # PE
-    else
-      if [[ ! -f "hisat2_output_${SRR}/${SRR}.sam" ]]; then
-        mkdir hisat2_output_${SRR}
-        # libtype auto detection mode
-        $HISAT2\
-        -p $THREADS \
-        --dta \
-        -x $SPECIES_NAME/genome \
-        -1 ${dirname_fq}${SRR}_1_val_1.fq.gz \
-        -2 ${dirname_fq}${SRR}_2_val_2.fq.gz \
-        -S hisat2_output_${SRR}/${SRR}.sam
-      fi
-    fi
-
-    #sambamba
-    if [[ ! -f "hisat2_output_${SRR}/${SRR}.bam" ]]; then
-      $SAMBAMBA view -S hisat2_output_${SRR}/${SRR}.sam -f bam -o hisat2_output_${SRR}/${SRR}.bam
-      $SAMBAMBA sort hisat2_output_${SRR}/${SRR}.bam
-      $SAMBAMBA index hisat2_output_${SRR}/${SRR}.sorted.bam
-      $BAMCOVERAGE -b hisat2_output_${SRR}/${SRR}.sorted.bam -o hisat2_output_${SRR}/${SRR}.bw
-    fi
-    
-    rm hisat2_output_${SRR}/${SRR}.sam
-    
-  done
-fi
-
-if [[ $MAPPING_TOOL = STAR ]]; then
-
-  # download reference genome
-  if [[ $REF_SPECIES = mouse ]]; then
-    BASE_REF_GENOME=http://ftp.ensembl.org/pub/release-102/fasta/mus_musculus/dna
-    REF_GENOME=Mus_musculus.GRCm38.dna.primary_assembly.fa
-  elif [[ $REF_SPECIES = human ]]; then
-    BASE_REF_GENOME=ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_37
-    REF_GENOME=GRCh38.primary_assembly.genome.fa
-  else
-    echo No reference genome!
-    exit
-  fi
-
-  if [[ ! -f "$REF_GENOME" ]]; then
-    $WGET $BASE_REF_GENOME/${REF_GENOME}.gz
-    gunzip ${REF_GENOME}.gz
-  fi
-
-  # make indexes of reference genome
-  if [[ ! -f "STAR_index/SAindex" ]]; then
-    mkdir STAR_index
-    $STAR_MAPPING \
-    --runMode genomeGenerate \
-    --genomeDir STAR_index \
-    --runThreadN $THREADS \
-    --genomeFastaFiles $REF_GENOME
-  fi
-
-  # mapping by STAR
-  for i in `tail -n +2  $EX_MATRIX_FILE | tr -d '\r'`
-  do
-    if [ $IF_FASTQ = false ]; then
-      # fasterq_dump
-      name=`echo $i | cut -d, -f1`
-      SRR=`echo $i | cut -d, -f2`
-      LAYOUT=`echo $i | cut -d, -f3`
-      dirname_fq=""
-    else
-      name=`echo $i | cut -d, -f1`
-      fq=`echo $i | cut -d, -f2`
-      LAYOUT=`echo $i | cut -d, -f3`
-      fqname_ext="${fq##*/}"
-      # echo $fqname_ext
-
-      # ファイル名を取り出す（拡張子なし）
-      # basename_fq="${fqname_ext%.*.*}"
-      basename_fq=${fqname_ext}
-      dirname_fq=`dirname $fq`
-      dirname_fq=${dirname_fq}/
-      SRR=${basename_fq}
-    fi
-
-    # SE
-    if [ $LAYOUT = SE ]; then
-      if [[ ! -f "STAR_output_${SRR}/${SRR}_Aligned.sortedByCoord.out.bam" ]]; then
-        mkdir STAR_output_${SRR}
-        $STAR_MAPPING \
-        --genomeDir STAR_index \
-        --runThreadN $THREADS \
-        --outFileNamePrefix STAR_output_${SRR}/${SRR}_ \
-        --outSAMtype BAM SortedByCoordinate \
-        --readFilesIn ${dirname_fq}${SRR}_trimmed.fq.gz \
-        --readFilesCommand gunzip -c
-      fi
-
-    # PE
-    else
-      if [[ ! -f "STAR_output_${SRR}/${SRR}_Aligned.sortedByCoord.out.bam" ]]; then
-        mkdir STAR_output_${SRR}
-        $STAR_MAPPING \
-        --genomeDir STAR_index \
-        --runThreadN $THREADS \
-        --outFileNamePrefix STAR_output_${SRR}/${SRR}_ \
-        --outSAMtype BAM SortedByCoordinate \
-        --readFilesIn ${dirname_fq}${SRR}_1_val_1.fq.gz ${dirname_fq}${SRR}_2_val_2.fq.gz \
-        --readFilesCommand gunzip -c
-      fi
-    fi
-
-    #sambamba
-    if [[ ! -f "STAR_output_${SRR}/${SRR}.bw" ]]; then
-      $SAMBAMBA index STAR_output_${SRR}/${SRR}_Aligned.sortedByCoord.out.bam
-      $BAMCOVERAGE -b STAR_output_${SRR}/${SRR}_Aligned.sortedByCoord.out.bam -o STAR_output_${SRR}/${SRR}.bw
-    fi
-  done
-fi
-
-################################
-
 
 # instance salmon index
 if [[ ! -d "$SALMON_INDEX" ]]; then
@@ -844,13 +509,6 @@ if [[  -f "tximport_R.R" ]]; then
   rm tximport_R.R
 fi
 
-if [ $IF_REMOVE_INTERMEDIATES = true ]; then
-  rm -f *fastq.gz
-  rm -f *fq.gz
-  rm -f gencode*.gz
-  rm -f *fastqc.zip
-  rm -rf salmon_output_*
-fi
 # if [[ "$RUNINDOCKER" -eq "1" ]]; then
 #
 #   chmod 755 .
