@@ -164,7 +164,7 @@ done
 
 ################################## tximport ##################################
 
-# tximport script embedded in this script
+# tximport script embedded in this script(ikra)
 cat << 'EOF' > tximport_R.R
 #! /usr/bin/Rscript
 ##### <import 3 libraries> #####
