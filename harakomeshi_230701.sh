@@ -75,16 +75,20 @@ tail -n +2 $csv_file | tr -d '\r' | while read i; do
 # Separate process for SE and PE
     if [ "$LAYOUT" = "SE" ]; then
     # if SE...
-    fastp -i "${SRR}.fastq.gz" -o "${SRR}_trimmed.fq.gz" -h "${SRR}.html" -j "${SRR}.json" -w $THREADS
-    # fastp command is successful, remove the original fastq file
-    rm "${SRR}.fastq.gz"
+        if [[ ! -f "${SRR}_trimmed.fq.gz" ]]; then
+        fastp -i "${SRR}.fastq.gz" -o "${SRR}_trimmed.fq.gz" -h "${SRR}.html" -j "${SRR}.json" -w $THREADS
+        # fastp command is successful, remove the original fastq file
+        rm "${SRR}.fastq.gz"
+        fi
 
     elif [ "$LAYOUT" = "PE" ]; then
      # if PE...
-    fastp -i "${SRR}_1.fastq.gz" -I "${SRR}_2.fastq.gz" -o "${SRR}_1_trimmed.fq.gz" -O "${SRR}_2_trimmed.fq.gz" -h "${SRR}.html" -j "${SRR}.json" -w $THREADS --detect_adapter_for_pe
-    # fastp command is successful, remove the original fastq files
-    rm "${SRR}_1.fastq.gz"
-    rm "${SRR}_2.fastq.gz"
+        if [[ ! -f "${SRR}_1_trimmed.fq.gz" ]]; then
+        fastp -i "${SRR}_1.fastq.gz" -I "${SRR}_2.fastq.gz" -o "${SRR}_1_trimmed.fq.gz" -O "${SRR}_2_trimmed.fq.gz" -h "${SRR}.html" -j "${SRR}.json" -w $THREADS --detect_adapter_for_pe
+        # fastp command is successful, remove the original fastq files
+        rm "${SRR}_1.fastq.gz"
+        rm "${SRR}_2.fastq.gz"
+        fi
     else
     echo "Invalid layout: $LAYOUT"
     echo "See fastp --help"
