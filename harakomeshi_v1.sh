@@ -1,12 +1,11 @@
 #!/bin/bash
 set -xe
-set -o pipefail
 
 # derived from ikra 
 
 PROGNAME="$( basename $0 )" # Program name
 
-VERSION="v0.0.1" # Version
+VERSION="v1.0.0" # Version
 
 # Usage
 function usage() {
