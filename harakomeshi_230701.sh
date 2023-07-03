@@ -92,14 +92,11 @@ done
 
 ################################## Salmon ##################################
 
-# docker run
-SALMON="$DRUN $SALMON_IMAGE $SALMON"
-
 # instance salmon index
 
 if [[ ! -d $SALMON_INDEX ]]; then
     $GET_REF_TRANSCRIPTS
-    eval $SALMON index \ 
+    $DRUN $SALMON_IMAGE salmon index \ 
     --threads $THREADS --transcripts $REF_TRANSCRIPT --index $SALMON_INDEX -k 31
 fi
 
@@ -116,7 +113,7 @@ tail -n +2 $csv_file | tr -d '\r' | while read i; do
         if [[ ! -f "salmon_output_${SRR}/quant.sf" ]]; then
         mkdir salmon_output_${SRR}
         # libtype auto detection mode (ikra) 
-        $SALMON quant -i $SALMON_INDEX \
+        $DRUN $SALMON_IMAGE salmon quant -i $SALMON_INDEX \
         -l A \
         -r ./${SRR}_trimmed.fq.gz \
         -p $THREADS \
@@ -129,7 +126,7 @@ tail -n +2 $csv_file | tr -d '\r' | while read i; do
         if [[ ! -f "salmon_output_${SRR}/quant.sf" ]]; then
         mkdir salmon_output_${SRR}
         # libtype auto detection mode (ikra)
-        $SALMON quant -i $SALMON_INDEX \
+        $DRUN $SALMON_IMAGE salmon quant -i $SALMON_INDEX \
         -l A \
         -1 ./${SRR}_1_trimmed.fq.gz \
         -2 ./${SRR}_2_trimmed.fq.gz \
@@ -142,9 +139,6 @@ tail -n +2 $csv_file | tr -d '\r' | while read i; do
 done
 
 ################################## tximport ##################################
-
-# docker run
-RSCRIPT_TXIMPORT="$DRUN $RSCRIPT_TXIMPORT_IMAGE $RSCRIPT_TXIMPORT"
 
 # tximport script embedded in this script
 cat << 'EOF' > tximport_R.R
