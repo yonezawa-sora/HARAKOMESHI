@@ -12,11 +12,12 @@ VERSION="v0.0.1" # Version
 function usage() {
     cat << EOS >&2 
 ${PROGNAME} ${VERSION} 
-    Usage: $0 <SRR csv file> [-t | --threads [VALUE], -h | --help]
+    Usage: $0 <SRR csv file> [-t | --threads [VALUE], -o | --output [VALUE] -h | --help]
     args:
         SRR csv file (ikra format)
     Optional args:
         -t, --threads: number of threads (default: 4)
+        -o, --output: output TSV file name (default: output.tsv)
         -h, --help: print help
 EOS
     exit 1
@@ -48,6 +49,14 @@ for opt in "$@"; do
                 THREADS="$1"; shift
             fi
             ;;
+        '-o'|'--output' )
+            if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
+                echo "$PROGNAME: option requires an argument -- $1" 1>&2
+                exit 1
+            fi
+              OUTPUT_FILE="$2"
+              shift 2
+              ;; 
         '-h'| '--help' )
             usage
             ;;
@@ -116,7 +125,8 @@ tail -n +2 $csv_file | tr -d '\r' | while read i; do
     LAYOUT=$(echo $i | cut -d ',' -f 3)
     dirname_fq=""
 
-# SE
+# SE 
+# remove option --gcBias for salmon newest version
     if [ $LAYOUT = "SE" ]; then
         if [[ ! -f "salmon_output_${SRR}/quant.sf" ]]; then
         mkdir salmon_output_${SRR}
@@ -126,7 +136,6 @@ tail -n +2 $csv_file | tr -d '\r' | while read i; do
         -r ./${SRR}_trimmed.fq.gz \
         -p $THREADS \
         -o salmon_output_${SRR} \
-        --gcbias \
         --validateMappings
         fi
     # PE
@@ -140,7 +149,6 @@ tail -n +2 $csv_file | tr -d '\r' | while read i; do
         -2 ./${SRR}_2_trimmed.fq.gz \
         -p $THREADS \
         -o salmon_output_${SRR} \
-        --gcbias \
         --validateMappings
         fi
     fi
