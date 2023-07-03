@@ -32,8 +32,9 @@ SALMON_INDEX="salmon_index_rice"
 SALMON_IMAGE="combinelab/salmon:1.10.0"
 GET_REF_TRANSCRIPTS="curl -O https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/current/fasta/oryza_sativa/cdna/Oryza_sativa.IRGSP-1.0.cdna.all.fa.gz"
 REF_TRANSCRIPT="Oryza_sativa.IRGSP-1.0.cdna.all.fa.gz"
-RSCRIPT_TXIMPORT="Rscript"
 RSCRIPT_TXIMPORT_IMAGE="fjukstad/tximport"
+OUTPUT_FILE="output.tsv"
+TX2GENEID="./rice_tx2geneID.tsv"
 
 
 # Get Arguments
@@ -166,29 +167,55 @@ done
 # tximport script embedded in this script
 cat << 'EOF' > tximport_R.R
 #! /usr/bin/Rscript
+##### <import 3 libraries> #####
 library(tximport)
 library(readr)
 library(stringr)
+
+##### <get 3 arguments([1]=TX2GENEID, [2]=$CSV_FILE, [3]=$OUTPUT_FILE)> #####
 args1 = commandArgs(trailingOnly=TRUE)[1]
 args2 = commandArgs(trailingOnly=TRUE)[2]
 args3 = commandArgs(trailingOnly=TRUE)[3]
+
+##### <Storage TX2GENEID as data.frame> #####
 tx2knownGene <- read_delim(args1, '\t', col_names = c('TXNAME', 'GENEID'))
+
+##### <Read CSV_FILE into a data frame> #####
 exp.table <- read.csv(args2, row.names=NULL)
+
+##### <Remove specific extensions from the file names in the second column> #####
 files.raw <- exp.table[,2]
 files.raw <- gsub(".gz$", "", files.raw)
 files.raw <- gsub(".fastq$", "", files.raw)
 files.raw <- gsub(".fq$", "", files.raw)
+
+##### <Extract only the file names from the paths> #####
 split.vec <- sapply(files.raw, basename)
-# print(paste(c("salmon_output_") , split.vec, c("/quant.sf"), sep=''))
-# files <- paste(c("salmon_output_") , exp.table[,2], c("/quant.sf"), sep='')
+
+##### <Strage file vector as list> #####
 files <- paste(c("salmon_output_") , split.vec, c("/quant.sf"), sep='')
 names(files) <- exp.table[,1]
+
+##### <Print file path vector> #####
 print(files)
-# txi.salmon <- tximport(files, type = "salmon", tx2gene = tx2knownGene)
+
+##### <tximport process> #####
 txi.salmon <- tximport(files, type = "salmon", tx2gene = tx2knownGene, countsFromAbundance="scaledTPM")
+
+##### <Write txi.salmon$counts> #####
 write.table(txi.salmon$counts, file=args3, sep="\t",col.names=NA,row.names=T,quote=F,append=F)
 write.table(exp.table[-c(2,3)], file="designtable.csv",row.names=F,quote=F,append=F)
 EOF
+
+# tximport
+
+if [[ ! -f "$OUTPUT_FILE" ]]; then
+    $DRUN $RSCRIPT_TXIMPORT_IMAGE Rscript tximport_R.R $TX2GENEID $CSV_FILE $OUTPUT_FILE
+fi
+
+if [[  -f "tximport_R.R" ]]; then
+  rm tximport_R.R
+fi
 
 cat << EOS
 RUN : success!
