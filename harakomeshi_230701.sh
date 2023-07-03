@@ -153,6 +153,11 @@ tail -n +2 $csv_file | tr -d '\r' | while read i; do
         --validateMappings
         fi
     fi
+
+    if [[ -f "salmon_output_${SRR}/logs/salmon_quant.log" ]]; then
+    mv "salmon_output_${SRR}/logs/salmon_quant.log" "salmon_output_${SRR}/logs/${SRR}_salmon_quant.log"
+    fi
+
 done
 
 ################################## tximport ##################################
