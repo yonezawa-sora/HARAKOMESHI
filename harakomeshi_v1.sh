@@ -11,12 +11,11 @@ VERSION="v1.0.0" # Version
 function usage() {
     cat << EOS >&2 
 ${PROGNAME} ${VERSION} 
-    Usage: $0 <SRR csv file> [-t | --threads [VALUE], -o | --output [VALUE] -h | --help]
+    Usage: $0 <SRR csv file> <output.tsv file> [-t | --threads [VALUE], -h | --help]
     args:
         SRR csv file (ikra format)
     Optional args:
         -t, --threads: number of threads (default: 4)
-        -o, --output: output TSV file name (default: output.tsv)
         -h, --help: print help
 EOS
     exit 1
@@ -32,12 +31,12 @@ SALMON_IMAGE="combinelab/salmon:1.10.0"
 GET_REF_TRANSCRIPTS="curl -O https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/current/fasta/oryza_sativa/cdna/Oryza_sativa.IRGSP-1.0.cdna.all.fa.gz"
 REF_TRANSCRIPT="Oryza_sativa.IRGSP-1.0.cdna.all.fa.gz"
 RSCRIPT_TXIMPORT_IMAGE="fjukstad/tximport"
-OUTPUT_FILE="output.tsv"
 TX2GENEID="rice_tx2geneID.tsv"
 
 
 # Get Arguments
 csv_file=$1; shift # shift command moves the positional parameters to the left by one!!
+output_file=$2; shift
 
 # Parse options （Referring to ikra.sh）
 PARAM=()
@@ -49,14 +48,6 @@ for opt in "$@"; do
                 THREADS="$1"; shift
             fi
             ;;
-        '-o'|'--output' )
-            if [[ -z "$2" ]] || [[ "$2" =~ ^-+ ]]; then
-                echo "$PROGNAME: option requires an argument -- $1" 1>&2
-                exit 1
-            fi
-              OUTPUT_FILE="$2"
-              shift 2
-              ;; 
         '-h'| '--help' )
             usage
             ;;
@@ -208,8 +199,8 @@ EOF
 
 # tximport
 
-if [[ ! -f "$OUTPUT_FILE" ]]; then
-    $DRUN $RSCRIPT_TXIMPORT_IMAGE Rscript ./tximport_R.R $TX2GENEID $CSV_FILE $OUTPUT_FILE
+if [[ ! -f "$output_file" ]]; then
+    $DRUN $RSCRIPT_TXIMPORT_IMAGE Rscript ./tximport_R.R $TX2GENEID $csv_file $output_file
 fi
 
 if [[  -f "tximport_R.R" ]]; then
