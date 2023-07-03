@@ -209,7 +209,7 @@ EOF
 # tximport
 
 if [[ ! -f "$OUTPUT_FILE" ]]; then
-    $DRUN $RSCRIPT_TXIMPORT_IMAGE tximport_R.R $TX2GENEID $CSV_FILE $OUTPUT_FILE
+    $DRUN $RSCRIPT_TXIMPORT_IMAGE Rscript ./tximport_R.R $TX2GENEID $CSV_FILE $OUTPUT_FILE
 fi
 
 if [[  -f "tximport_R.R" ]]; then
