@@ -139,6 +139,7 @@ tail -n +2 $csv_file | tr -d '\r' | while read i; do
         --validateMappings
         fi
     # PE
+    # remove option --gcBias for salmon newest version
     else
         if [[ ! -f "salmon_output_${SRR}/quant.sf" ]]; then
         mkdir salmon_output_${SRR}
