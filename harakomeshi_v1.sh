@@ -33,7 +33,7 @@ GET_REF_TRANSCRIPTS="curl -O https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/cur
 REF_TRANSCRIPT="Oryza_sativa.IRGSP-1.0.cdna.all.fa.gz"
 RSCRIPT_TXIMPORT_IMAGE="fjukstad/tximport"
 OUTPUT_FILE="output.tsv"
-TX2GENEID="./rice_tx2geneID.tsv"
+TX2GENEID="rice_tx2geneID.tsv"
 
 
 # Get Arguments
