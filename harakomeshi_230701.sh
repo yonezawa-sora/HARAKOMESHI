@@ -101,7 +101,9 @@ done
 # instance salmon index
 
 if [[ ! -d $SALMON_INDEX ]]; then
-    $GET_REF_TRANSCRIPTS
+    if [[ ! -f $REF_TRANSCRIPT ]]; then
+        $GET_REF_TRANSCRIPTS
+    fi
     $DRUN $SALMON_IMAGE salmon index \
     --threads $THREADS --transcripts $REF_TRANSCRIPT --index $SALMON_INDEX -k 31
 fi
