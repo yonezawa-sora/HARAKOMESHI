@@ -75,7 +75,7 @@ fi
 
 ################################## fastp ##################################
 
-tail -n +2 $csv_file | tr -d '\r' | while read i; do
+tail -n +2 $csv_file | tr -d '\r' | while IFS= read -r i || [[ -n "$i" ]]; do
     name=$(echo $i | cut -d ',' -f 1)
     SRR=$(echo $i | cut -d ',' -f 2)
     LAYOUT=$(echo $i | cut -d ',' -f 3)
@@ -119,7 +119,7 @@ fi
 
 # quantification
 
-tail -n +2 $csv_file | tr -d '\r' | while read i; do
+tail -n +2 $csv_file | tr -d '\r' | while IFS= read -r i || [[ -n "$i" ]]; do
     name=$(echo $i | cut -d ',' -f 1)
     SRR=$(echo $i | cut -d ',' -f 2)
     LAYOUT=$(echo $i | cut -d ',' -f 3)
