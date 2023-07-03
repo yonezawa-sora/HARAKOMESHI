@@ -102,7 +102,7 @@ done
 
 if [[ ! -d $SALMON_INDEX ]]; then
     $GET_REF_TRANSCRIPTS
-    $DRUN $SALMON_IMAGE salmon index \ 
+    $DRUN $SALMON_IMAGE salmon index \
     --threads $THREADS --transcripts $REF_TRANSCRIPT --index $SALMON_INDEX -k 31
 fi
 
