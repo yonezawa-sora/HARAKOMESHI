@@ -28,7 +28,7 @@ EOS
 
 DRUN="docker run -u $(id -u):$(id -g) --rm -v $(pwd):/home -e HOME=/home --workdir /home"
 SALMON_INDEX="salmon_index_rice"
-SALMON_IMAGE="combinelab/salmon:1.10.2"
+SALMON_IMAGE="combinelab/salmon:1.10.0"
 GET_REF_TRANSCRIPTS="curl -O https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/current/fasta/oryza_sativa/cdna/Oryza_sativa.IRGSP-1.0.cdna.all.fa.gz"
 REF_TRANSCRIPT="Oryza_sativa.IRGSP-1.0.cdna.all.fa.gz"
 RSCRIPT_TXIMPORT_IMAGE="fjukstad/tximport"
@@ -129,7 +129,7 @@ tail -n +2 $csv_file | tr -d '\r' | while IFS= read -r i || [[ -n "$i" ]]; do
         -r ./${SRR}_trimmed.fq.gz \
         -p $THREADS \
         -o salmon_output_${SRR} \
-        --gcbias \
+        --gcBias \
         --validateMappings
         fi
     # PE
@@ -144,7 +144,7 @@ tail -n +2 $csv_file | tr -d '\r' | while IFS= read -r i || [[ -n "$i" ]]; do
         -2 ./${SRR}_2_trimmed.fq.gz \
         -p $THREADS \
         -o salmon_output_${SRR} \
-        --gcbias \
+        --gcBias \
         --validateMappings
         fi
     fi
