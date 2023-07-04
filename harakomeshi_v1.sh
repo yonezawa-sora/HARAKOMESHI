@@ -107,7 +107,7 @@ if [[ ! -d $SALMON_INDEX ]]; then
         $GET_REF_TRANSCRIPTS
     fi
     $DRUN $SALMON_IMAGE salmon index \
-    --threads $THREADS --transcripts $REF_TRANSCRIPT --index $SALMON_INDEX -k 31
+    --threads $THREADS --transcripts $REF_TRANSCRIPT --index $SALMON_INDEX -k 31 # for 64bit machine
 fi
 
 # quantification
