@@ -14,6 +14,7 @@ ${PROGNAME} ${VERSION}
     Usage: $0 <SRR csv file> <output.tsv file> [-t | --threads [VALUE], -h | --help]
     args:
         SRR csv file (ikra format)
+        output.tsv file (for tximport)
     Optional args:
         -t, --threads: number of threads (default: 4)
         -h, --help: print help
@@ -27,7 +28,7 @@ EOS
 
 DRUN="docker run -u $(id -u):$(id -g) --rm -v $(pwd):/home -e HOME=/home --workdir /home"
 SALMON_INDEX="salmon_index_rice"
-SALMON_IMAGE="combinelab/salmon:1.10.0"
+SALMON_IMAGE="combinelab/salmon:1.10.2"
 GET_REF_TRANSCRIPTS="curl -O https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/current/fasta/oryza_sativa/cdna/Oryza_sativa.IRGSP-1.0.cdna.all.fa.gz"
 REF_TRANSCRIPT="Oryza_sativa.IRGSP-1.0.cdna.all.fa.gz"
 RSCRIPT_TXIMPORT_IMAGE="fjukstad/tximport"
@@ -36,7 +37,7 @@ TX2GENEID="rice_tx2geneID.tsv"
 
 # Get Arguments
 csv_file=$1; shift # shift command moves the positional parameters to the left by one!!
-output_file=$2; shift
+output_file=$1; shift
 
 # Parse options （Referring to ikra.sh）
 PARAM=()
@@ -128,6 +129,7 @@ tail -n +2 $csv_file | tr -d '\r' | while IFS= read -r i || [[ -n "$i" ]]; do
         -r ./${SRR}_trimmed.fq.gz \
         -p $THREADS \
         -o salmon_output_${SRR} \
+        --gcbias \
         --validateMappings
         fi
     # PE
@@ -142,6 +144,7 @@ tail -n +2 $csv_file | tr -d '\r' | while IFS= read -r i || [[ -n "$i" ]]; do
         -2 ./${SRR}_2_trimmed.fq.gz \
         -p $THREADS \
         -o salmon_output_${SRR} \
+        --gcbias \
         --validateMappings
         fi
     fi
