@@ -130,7 +130,8 @@ tail -n +2 $csv_file | tr -d '\r' | while IFS= read -r i || [[ -n "$i" ]]; do
         -p $THREADS \
         -o salmon_output_${SRR} \
         --gcBias \
-        --validateMappings
+        --validateMappings #obsolete option. see salmon document (https://salmon.readthedocs.io/en/latest/salmon.html)
+        fi
         fi
     # PE
     # remove option --gcBias for salmon newest version (1.10.0)
@@ -145,7 +146,7 @@ tail -n +2 $csv_file | tr -d '\r' | while IFS= read -r i || [[ -n "$i" ]]; do
         -p $THREADS \
         -o salmon_output_${SRR} \
         --gcBias \
-        --validateMappings
+        --validateMappings #obsolete option. see salmon document (https://salmon.readthedocs.io/en/latest/salmon.html)
         fi
     fi
 
