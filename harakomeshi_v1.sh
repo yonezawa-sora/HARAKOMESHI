@@ -132,7 +132,6 @@ tail -n +2 $csv_file | tr -d '\r' | while IFS= read -r i || [[ -n "$i" ]]; do
         --gcBias \
         --validateMappings #obsolete option. see salmon document (https://salmon.readthedocs.io/en/latest/salmon.html)
         fi
-        fi
     # PE
     # remove option --gcBias for salmon newest version (1.10.0)
     else
